@@ -13,7 +13,7 @@ provider "aws" {
 
 terraform {
   backend "s3" {
-    bucket         = "tf-statefile-manam"
+    bucket         = "tf-state-karthik"
     key            = "prod/terraform.tfstate"
     region         = "us-east-1"
     dynamodb_table = "terraform-locks"
