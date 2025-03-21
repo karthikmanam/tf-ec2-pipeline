@@ -20,7 +20,7 @@ on:
       action:
         description: 'Action to perform'
         required: true
-        default: 'plan'
+        default: 'apply'
         type: choice
         options:
           - plan
