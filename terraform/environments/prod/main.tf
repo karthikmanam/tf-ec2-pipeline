@@ -65,8 +65,7 @@ module "ec2" {
   linux_private_ip         = var.linux_private_ip
   linux_assign_eip         = var.linux_assign_eip
   linux_root_volume_size   = var.linux_root_volume_size
-  linux_cloud_init_file    = file(local_file.linux_cloud_init_file.filename)
-  
+  inux_cloud_init_file = local_file.linux_cloud_init_file.content
   # Windows Server
   windows_instance_type      = var.windows_instance_type
   windows_subnet_id          = module.vpc.private_subnet_ids[1]  # Note: Using private subnet for prod
@@ -74,7 +73,7 @@ module "ec2" {
   windows_private_ip         = var.windows_private_ip
   windows_assign_eip         = var.windows_assign_eip
   windows_root_volume_size   = var.windows_root_volume_size
-  windows_cloud_init_file    = file(local_file.windows_cloud_init_file.filename)
+ windows_cloud_init_file = local_file.windows_cloud_init_file.content
   
   # Common
   key_name               = var.key_name
