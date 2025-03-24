@@ -18,13 +18,13 @@ winrm_allowed_cidrs = ["10.0.0.0/8"]
 # Linux Server
 linux_instance_type    = "t3.micro"
 linux_private_ip       = "10.1.1.10"
-linux_assign_eip       = true
+linux_assign_eip       = false
 linux_root_volume_size = 30
 
 # Windows Server
 windows_instance_type    = "t3.small"
 windows_private_ip       = "10.1.2.10"
-windows_assign_eip       = true
+windows_assign_eip       = false
 windows_root_volume_size = 50
 
 # Common

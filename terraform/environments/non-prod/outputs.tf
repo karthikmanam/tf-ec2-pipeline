@@ -25,36 +25,36 @@ output "linux_private_ip" {
   value       = module.ec2.linux_private_ip
 }
 
-output "linux_public_ip" {
-  description = "Public IP of the Linux server (if applicable)"
-  value       = module.ec2.linux_public_ip
-}
+# output "linux_public_ip" {
+#   description = "Public IP of the Linux server (if applicable)"
+#   value       = module.ec2.linux_public_ip
+# }
 
-output "linux_elastic_ip" {
-  description = "Elastic IP of the Linux server (if applicable)"
-  value       = module.ec2.linux_elastic_ip
-}
+# output "linux_elastic_ip" {
+#   description = "Elastic IP of the Linux server (if applicable)"
+#   value       = module.ec2.linux_elastic_ip
+# }
 
 # Windows Server Outputs
-output "windows_instance_id" {
-  description = "ID of the Windows server instance"
-  value       = module.ec2.windows_instance_id
-}
+# output "windows_instance_id" {
+#   description = "ID of the Windows server instance"
+#   value       = module.ec2.windows_instance_id
+# }
 
-output "windows_private_ip" {
-  description = "Private IP of the Windows server"
-  value       = module.ec2.windows_private_ip
-}
+# output "windows_private_ip" {
+#   description = "Private IP of the Windows server"
+#   value       = module.ec2.windows_private_ip
+# }
 
-output "windows_public_ip" {
-  description = "Public IP of the Windows server (if applicable)"
-  value       = module.ec2.windows_public_ip
-}
+# output "windows_public_ip" {
+#   description = "Public IP of the Windows server (if applicable)"
+#   value       = module.ec2.windows_public_ip
+# }
 
-output "windows_elastic_ip" {
-  description = "Elastic IP of the Windows server (if applicable)"
-  value       = module.ec2.windows_elastic_ip
-}
+# output "windows_elastic_ip" {
+#   description = "Elastic IP of the Windows server (if applicable)"
+#   value       = module.ec2.windows_elastic_ip
+# }
 
 # Security Group Outputs
 output "linux_security_group_id" {
