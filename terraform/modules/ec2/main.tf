@@ -1,119 +1,103 @@
-data "aws_ssm_parameter" "amazon_linux" {
-  name = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
-}
-
-data "aws_ssm_parameter" "windows_server" {
-  name = "/aws/service/ami-windows-latest/Windows_Server-2022-English-Full-Base"
-}
-
-# Linux Server
-resource "aws_instance" "linux_server" {
-  ami                    = data.aws_ssm_parameter.amazon_linux.value
-  instance_type          = var.linux_instance_type
-  key_name               = var.key_name
-  subnet_id              = var.linux_subnet_id
-  vpc_security_group_ids = [var.linux_security_group_id]
-  iam_instance_profile   = var.instance_profile_name
-
-  # Use static private IP if provided
-  private_ip = var.linux_private_ip != "" ? var.linux_private_ip : null
-
-  # Use cloud-init if file provided
-  user_data = var.linux_cloud_init_file
-
-  root_block_device {
-    volume_size           = var.linux_root_volume_size
-    volume_type           = var.linux_root_volume_type
-    delete_on_termination = true
-    encrypted             = true
-  }
-
-  tags = merge(
-    var.tags,
-    {
-      Name = "${var.environment}-linux-server"
-    }
-  )
-
-  lifecycle {
-    ignore_changes = [ami]
+# VPC and Networking
+resource "aws_vpc" "main" {
+  cidr_block = var.vpc_cidr
+  tags = {
+    Name        = "${var.environment}-vpc"
+    Environment = var.environment
   }
 }
 
-# Elastic IP for Linux Server (optional)
-resource "aws_eip" "linux_eip" {
-  count    = var.linux_assign_eip ? 1 : 0
-  domain   = "vpc"
-  instance = aws_instance.linux_server.id
-
-  tags = merge(
-    var.tags,
-    {
-      Name = "${var.environment}-linux-server-eip"
-    }
-  )
-}
-
-# Windows Server
-resource "aws_instance" "windows_server" {
-  ami                    = data.aws_ssm_parameter.windows_server.value
-  instance_type          = var.windows_instance_type
-  key_name               = var.key_name
-  subnet_id              = var.windows_subnet_id
-  vpc_security_group_ids = [var.windows_security_group_id]
-  iam_instance_profile   = var.instance_profile_name
-
-  # Use static private IP if provided
-  private_ip = var.windows_private_ip != "" ? var.windows_private_ip : null
-
-  # Use cloud-init (PowerShell script) if content provided
-  user_data = var.windows_cloud_init_file
-  root_block_device {
-    volume_size           = var.windows_root_volume_size
-    volume_type           = var.windows_root_volume_type
-    delete_on_termination = true
-    encrypted             = true
-  }
-
-  tags = merge(
-    var.tags,
-    {
-      Name = "${var.environment}-windows-server"
-    }
-  )
-
-  lifecycle {
-    ignore_changes = [ami]
+resource "aws_subnet" "main" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = var.subnet_cidr
+  tags = {
+    Name        = "${var.environment}-subnet"
+    Environment = var.environment
   }
 }
 
-# Elastic IP for Windows Server (optional)
-resource "aws_eip" "windows_eip" {
-  count    = var.windows_assign_eip ? 1 : 0
-  domain   = "vpc"
-  instance = aws_instance.windows_server.id
-
-  tags = merge(
-    var.tags,
-    {
-      Name = "${var.environment}-windows-server-eip"
-    }
-  )
+resource "aws_route_table" "main" {
+  vpc_id = aws_vpc.main.id
+  tags = {
+    Name        = "${var.environment}-rt"
+    Environment = var.environment
+  }
 }
 
-#generate key
-resource "tls_private_key" "key" {
-  algorithm = "RSA"
+resource "aws_route_table_association" "main" {
+  subnet_id      = aws_subnet.main.id
+  route_table_id = aws_route_table.main.id
 }
 
-#create key pair
-resource "aws_key_pair" "key_pair" {
-  key_name   = var.key_name
-  public_key = tls_private_key.key.public_key_openssh
-  tags = merge(
-    var.tags,
-    {
-      Name = "${var.environment}-key-pair"
+# Security Group
+resource "aws_security_group" "main" {
+  name        = "${var.environment}-sg"
+  description = "Security group for EC2 instances"
+  vpc_id      = aws_vpc.main.id
+
+  dynamic "ingress" {
+    for_each = var.ingress_rules
+    content {
+      from_port   = ingress.value.from_port
+      to_port     = ingress.value.to_port
+      protocol    = ingress.value.protocol
+      cidr_blocks = ingress.value.cidr_blocks
     }
-  )
+  }
+
+  dynamic "egress" {
+    for_each = var.egress_rules
+    content {
+      from_port   = egress.value.from_port
+      to_port     = egress.value.to_port
+      protocol    = egress.value.protocol
+      cidr_blocks = egress.value.cidr_blocks
+    }
+  }
+
+  tags = {
+    Environment = var.environment
+  }
+}
+
+# EC2 Instances - Windows
+resource "aws_instance" "windows" {
+  count         = length(var.windows_instances)
+  ami           = var.windows_instances[count.index].ami
+  instance_type = var.windows_instances[count.index].instance_type
+  subnet_id     = aws_subnet.main.id
+  vpc_security_group_ids = [aws_security_group.main.id]
+  
+  # Static private IP, no public IP
+  associate_public_ip_address = false
+  private_ip = var.windows_instances[count.index].private_ip
+
+  # Cloud-init support
+  user_data = var.windows_instances[count.index].user_data
+
+  tags = {
+    Name        = "${var.environment}-windows-${count.index}"
+    Environment = var.environment
+  }
+}
+
+# EC2 Instances - Linux
+resource "aws_instance" "linux" {
+  count         = length(var.linux_instances)
+  ami           = var.linux_instances[count.index].ami
+  instance_type = var.linux_instances[count.index].instance_type
+  subnet_id     = aws_subnet.main.id
+  vpc_security_group_ids = [aws_security_group.main.id]
+  
+  # Static private IP, no public IP
+  associate_public_ip_address = false
+  private_ip = var.linux_instances[count.index].private_ip
+
+  # Cloud-init support
+  user_data = var.linux_instances[count.index].user_data
+
+  tags = {
+    Name        = "${var.environment}-linux-${count.index}"
+    Environment = var.environment
+  }
 }

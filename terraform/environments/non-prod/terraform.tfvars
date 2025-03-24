@@ -1,31 +1,56 @@
-# General
-aws_region   = "us-east-1"
-project_name = "ec2-servers"
-owner        = "DevOps"
-cost_center  = "IT-Infrastructure"
+region        = "us-east-1"
+environment   = "non-prod"
+project_name  = "my-project"
+owner         = "karthik"
 
-# VPC
-vpc_cidr             = "10.1.0.0/16"
-public_subnet_cidrs  = ["10.1.1.0/24", "10.1.2.0/24"]
-private_subnet_cidrs = ["10.1.10.0/24", "10.1.11.0/24"]
-availability_zones   = ["us-east-1a", "us-east-1b"]
+windows_instances = [
+  {
+    ami           = "ami-windows-latest"  # Replace with actual AMI ID
+    instance_type = "t2.micro"
+    private_ip    = "10.1.1.10"
+    user_data     = <<EOF
+<powershell>
+Write-Output "Initializing Prod Windows Server"
+</powershell>
+EOF
+  }
+]
 
-# Security
-ssh_allowed_cidrs   = ["10.0.0.0/8"]
-rdp_allowed_cidrs   = ["10.0.0.0/8"]
-winrm_allowed_cidrs = ["10.0.0.0/8"]
+linux_instances = [
+  {
+    ami           = "ami-ubuntu-latest"  # Replace with actual AMI ID
+    instance_type = "t2.micro"
+    private_ip    = "10.1.1.11"
+    user_data     = <<EOF
+#!/bin/bash
+echo "Initializing Prod Linux Server" > /tmp/init.log
+EOF
+  }
+]
 
-# Linux Server
-linux_instance_type    = "t3.micro"
-linux_private_ip       = "10.1.1.10"
-linux_assign_eip       = false
-linux_root_volume_size = 30
+vpc_cidr    = "10.1.0.0/16"
+subnet_cidr = "10.1.1.0/24"
 
-# Windows Server
-windows_instance_type    = "t3.small"
-windows_private_ip       = "10.1.2.10"
-windows_assign_eip       = false
-windows_root_volume_size = 50
+ingress_rules = [
+  {
+    from_port   = 3389
+    to_port     = 3389
+    protocol    = "tcp"
+    cidr_blocks = ["10.1.0.0/16"]
+  },
+  {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["10.1.0.0/16"]
+  }
+]
 
-# Common
-key_name = "ec2-key-pair-non-prod"
+egress_rules = [
+  {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["10.1.0.0/16"]
+  }
+]
